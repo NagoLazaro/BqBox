@@ -7,6 +7,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -48,13 +49,15 @@ public class LoginActivity extends AppCompatActivity {
     private static final String ACCESS_KEY_NAME = "ACCESS_KEY";
     private static final String ACCESS_SECRET_NAME = "ACCESS_SECRET";
 
-    DropboxAPI<AndroidAuthSession> mApi;
     // Android widgets
     @Bind(R.id.list)
     RecyclerView list;
     @Bind(R.id.auth_button)
     Button authButton;
-    private boolean mLoggedIn;
+
+    private DropboxAPI<AndroidAuthSession> mApi;
+    private boolean mLoggedIn, modeList = true;
+    private ListAdapter adapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,19 +77,26 @@ public class LoginActivity extends AppCompatActivity {
         setLoggedIn(mApi.getSession().isLinked());
 
         // RecyclerView
-        final ListAdapter adapter = new ListAdapter();
+        adapter = new ListAdapter();
         list.setLayoutManager(new LinearLayoutManager(this));
         list.setAdapter(adapter);
+        loadData();
+    }
 
-        if (mLoggedIn) {
-            final Handler handler = new Handler();
-            new ListFiles(mApi, "/", new OnLoadCompleted() {
-                @Override
-                public void onLoadCompleted(List<DropboxAPI.Entry> items) {
-                    adapter.addAll(items);
-                }
-            }).execute();
-        }
+    @OnClick(R.id.change_list_mode)
+    void changeListMode(Button button) {
+        modeList = !modeList;
+        list.setLayoutManager(modeList ? new LinearLayoutManager(this) : new GridLayoutManager(this, 2));
+        button.setText(modeList ? "Grid" : "List");
+    }
+
+    private void loadData() {
+        new ListFiles(mApi, "/", new OnLoadCompleted() {
+            @Override
+            public void onLoadCompleted(List<DropboxAPI.Entry> items) {
+                adapter.addAll(items);
+            }
+        }).execute();
     }
 
     @OnClick(R.id.auth_button)
