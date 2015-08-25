@@ -12,6 +12,8 @@ import com.dropbox.client2.DropboxAPI;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import butterknife.Bind;
@@ -36,7 +38,7 @@ public class ListAdapter extends RecyclerView.Adapter<ViewHolder> {
             viewHolder.text1.setText(currentItem.fileName());
 
         if (!TextUtils.isEmpty(currentItem.modified))
-            viewHolder.text2.setText(currentItem.modified);
+            viewHolder.text2.setText(currentItem.clientMtime);
     }
 
     @Override
@@ -48,6 +50,11 @@ public class ListAdapter extends RecyclerView.Adapter<ViewHolder> {
         int previous = getItemCount();
         this.items.addAll(items);
         notifyItemRangeInserted(previous, getItemCount());
+    }
+
+    public void sort(Comparator<DropboxAPI.Entry> comparator) {
+        Collections.sort(items, comparator);
+        notifyDataSetChanged();
     }
 }
 

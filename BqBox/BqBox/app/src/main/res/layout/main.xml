@@ -16,6 +16,12 @@
         android:layout_height="wrap_content"
         android:text="Grid"/>
 
+    <Button
+        android:id="@+id/change_sort_mode"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Sort by date"/>
+
     <android.support.v7.widget.RecyclerView
         android:id="@+id/list"
         android:layout_width="match_parent"

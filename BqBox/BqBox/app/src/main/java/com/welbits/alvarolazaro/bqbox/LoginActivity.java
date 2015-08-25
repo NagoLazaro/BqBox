@@ -5,7 +5,6 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
@@ -19,7 +18,12 @@ import com.dropbox.client2.android.AndroidAuthSession;
 import com.dropbox.client2.android.AuthActivity;
 import com.dropbox.client2.session.AppKeyPair;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
@@ -49,6 +53,29 @@ public class LoginActivity extends AppCompatActivity {
     private static final String ACCESS_KEY_NAME = "ACCESS_KEY";
     private static final String ACCESS_SECRET_NAME = "ACCESS_SECRET";
 
+    // Item comparators
+    private static final Comparator<DropboxAPI.Entry> SORT_BY_NAME_COMPARATOR = new Comparator<DropboxAPI.Entry>() {
+        @Override
+        public int compare(DropboxAPI.Entry lhs, DropboxAPI.Entry rhs) {
+            return lhs.fileName().toLowerCase().compareTo(rhs.fileName().toLowerCase());
+        }
+    };
+    private static final Comparator<DropboxAPI.Entry> SORT_BY_DATE_COMPARATOR = new Comparator<DropboxAPI.Entry>() {
+        final SimpleDateFormat dropboxDateFormat = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z", Locale.getDefault());
+        private Date parse(String dateString) {
+            try {
+                return dropboxDateFormat.parse(dateString);
+            } catch (ParseException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        @Override
+        public int compare(DropboxAPI.Entry lhs, DropboxAPI.Entry rhs) {
+            return parse(lhs.clientMtime).compareTo(parse(rhs.clientMtime));
+        }
+    };
+
     // Android widgets
     @Bind(R.id.list)
     RecyclerView list;
@@ -56,7 +83,7 @@ public class LoginActivity extends AppCompatActivity {
     Button authButton;
 
     private DropboxAPI<AndroidAuthSession> mApi;
-    private boolean mLoggedIn, modeList = true;
+    private boolean mLoggedIn, modeList = true, sortByName = true;
     private ListAdapter adapter;
 
     @Override
@@ -90,11 +117,19 @@ public class LoginActivity extends AppCompatActivity {
         button.setText(modeList ? "Grid" : "List");
     }
 
+    @OnClick(R.id.change_sort_mode)
+    void changeSortMode(Button button) {
+        sortByName = !sortByName;
+        adapter.sort(sortByName ? SORT_BY_NAME_COMPARATOR : SORT_BY_DATE_COMPARATOR);
+        button.setText(sortByName ? "Sort by date" : "Sort by name");
+    }
+
     private void loadData() {
         new ListFiles(mApi, "/", new OnLoadCompleted() {
             @Override
             public void onLoadCompleted(List<DropboxAPI.Entry> items) {
                 adapter.addAll(items);
+                adapter.sort(SORT_BY_NAME_COMPARATOR);
             }
         }).execute();
     }
