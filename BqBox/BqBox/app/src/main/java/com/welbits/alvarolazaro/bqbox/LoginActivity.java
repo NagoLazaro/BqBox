@@ -7,8 +7,9 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
-import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
@@ -16,6 +17,12 @@ import com.dropbox.client2.DropboxAPI;
 import com.dropbox.client2.android.AndroidAuthSession;
 import com.dropbox.client2.android.AuthActivity;
 import com.dropbox.client2.session.AppKeyPair;
+
+import java.util.List;
+
+import butterknife.Bind;
+import butterknife.ButterKnife;
+import butterknife.OnClick;
 
 public class LoginActivity extends AppCompatActivity {
 
@@ -42,11 +49,12 @@ public class LoginActivity extends AppCompatActivity {
     private static final String ACCESS_SECRET_NAME = "ACCESS_SECRET";
 
     DropboxAPI<AndroidAuthSession> mApi;
-
-    private boolean mLoggedIn;
-
     // Android widgets
-    private Button mSubmit;
+    @Bind(R.id.list)
+    RecyclerView list;
+    @Bind(R.id.auth_button)
+    Button authButton;
+    private boolean mLoggedIn;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,28 +66,37 @@ public class LoginActivity extends AppCompatActivity {
 
         // Basic Android widgets
         setContentView(R.layout.main);
+        ButterKnife.bind(this);
 
         checkAppKeySetup();
-
-        mSubmit = (Button) findViewById(R.id.auth_button);
-
-        mSubmit.setOnClickListener(new View.OnClickListener() {
-            public void onClick(View v) {
-                // This logs you out if you're logged in, or vice versa
-                if (mLoggedIn) {
-                    logOut();
-                } else {
-                    // Start the remote authentication
-                    mApi.getSession().startOAuth2Authentication(LoginActivity.this);
-                }
-            }
-        });
 
         // Display the proper UI state if logged in or not
         setLoggedIn(mApi.getSession().isLinked());
 
+        // RecyclerView
+        final ListAdapter adapter = new ListAdapter();
+        list.setLayoutManager(new LinearLayoutManager(this));
+        list.setAdapter(adapter);
+
         if (mLoggedIn) {
-            new ListFiles(mApi, "/", new Handler()).execute();
+            final Handler handler = new Handler();
+            new ListFiles(mApi, "/", new OnLoadCompleted() {
+                @Override
+                public void onLoadCompleted(List<DropboxAPI.Entry> items) {
+                    adapter.addAll(items);
+                }
+            }).execute();
+        }
+    }
+
+    @OnClick(R.id.auth_button)
+    public void onAuthButtonClicked() {
+        // This logs you out if you're logged in, or vice versa
+        if (mLoggedIn) {
+            logOut();
+        } else {
+            // Start the remote authentication
+            mApi.getSession().startOAuth2Authentication(LoginActivity.this);
         }
     }
 
@@ -122,9 +139,9 @@ public class LoginActivity extends AppCompatActivity {
     private void setLoggedIn(boolean loggedIn) {
         mLoggedIn = loggedIn;
         if (loggedIn) {
-            mSubmit.setText("Unlink from Dropbox");
+            authButton.setText("Unlink from Dropbox");
         } else {
-            mSubmit.setText("Link with Dropbox");
+            authButton.setText("Link with Dropbox");
         }
     }
 
