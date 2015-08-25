@@ -10,6 +10,7 @@ import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
@@ -81,6 +82,10 @@ public class LoginActivity extends AppCompatActivity {
     RecyclerView list;
     @Bind(R.id.auth_button)
     Button authButton;
+    @Bind(R.id.change_list_mode)
+    Button changeListModeButton;
+    @Bind(R.id.change_sort_mode)
+    Button changeSortModeButton;
 
     private DropboxAPI<AndroidAuthSession> mApi;
     private boolean mLoggedIn, modeList = true, sortByName = true;
@@ -100,14 +105,13 @@ public class LoginActivity extends AppCompatActivity {
 
         checkAppKeySetup();
 
-        // Display the proper UI state if logged in or not
-        setLoggedIn(mApi.getSession().isLinked());
-
         // RecyclerView
         adapter = new ListAdapter();
         list.setLayoutManager(new LinearLayoutManager(this));
         list.setAdapter(adapter);
-        loadData();
+
+        // Display the proper UI state if logged in or not
+        setLoggedIn(mApi.getSession().isLinked());
     }
 
     @OnClick(R.id.change_list_mode)
@@ -185,8 +189,14 @@ public class LoginActivity extends AppCompatActivity {
         mLoggedIn = loggedIn;
         if (loggedIn) {
             authButton.setText("Unlink from Dropbox");
+            changeListModeButton.setVisibility(View.VISIBLE);
+            changeSortModeButton.setVisibility(View.VISIBLE);
+            loadData();
         } else {
             authButton.setText("Link with Dropbox");
+            changeListModeButton.setVisibility(View.GONE);
+            changeSortModeButton.setVisibility(View.GONE);
+            adapter.clear();
         }
     }
 

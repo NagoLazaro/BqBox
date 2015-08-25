@@ -49,12 +49,18 @@ public class ListAdapter extends RecyclerView.Adapter<ViewHolder> {
     public void addAll(Collection<? extends DropboxAPI.Entry> items) {
         int previous = getItemCount();
         this.items.addAll(items);
-        notifyItemRangeInserted(previous, getItemCount());
+        notifyItemRangeInserted(previous, items.size());
     }
 
     public void sort(Comparator<DropboxAPI.Entry> comparator) {
         Collections.sort(items, comparator);
         notifyDataSetChanged();
+    }
+
+    public void clear() {
+        int previous = getItemCount();
+        this.items.clear();
+        notifyItemRangeRemoved(0, previous);
     }
 }
 
