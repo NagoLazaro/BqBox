@@ -20,12 +20,17 @@ import butterknife.Bind;
 import butterknife.ButterKnife;
 
 public class ListAdapter extends RecyclerView.Adapter<ViewHolder> {
-    List<DropboxAPI.Entry> items = new ArrayList<DropboxAPI.Entry>();
+    private final OnItemClicked listener;
+    private List<DropboxAPI.Entry> items = new ArrayList<DropboxAPI.Entry>();
+
+    public ListAdapter(OnItemClicked listener) {
+        this.listener = listener;
+    }
 
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup viewGroup, int position) {
         return new ViewHolder(LayoutInflater.from(viewGroup.getContext())
-                .inflate(android.R.layout.simple_list_item_2, viewGroup, false));
+                .inflate(android.R.layout.simple_list_item_2, viewGroup, false), listener);
     }
 
     @Override
@@ -70,13 +75,13 @@ class ViewHolder extends RecyclerView.ViewHolder {
 
     private DropboxAPI.Entry currentItem;
 
-    public ViewHolder(View itemView) {
+    public ViewHolder(View itemView, final OnItemClicked listener) {
         super(itemView);
         ButterKnife.bind(this, itemView);
         itemView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Toast.makeText(v.getContext(), currentItem.fileName(), Toast.LENGTH_SHORT).show();
+                listener.onItemClicked(currentItem, getAdapterPosition());
             }
         });
     }

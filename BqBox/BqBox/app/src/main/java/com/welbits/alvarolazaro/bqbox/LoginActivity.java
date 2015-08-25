@@ -5,6 +5,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.LinearLayoutManager;
@@ -63,6 +64,7 @@ public class LoginActivity extends AppCompatActivity {
     };
     private static final Comparator<DropboxAPI.Entry> SORT_BY_DATE_COMPARATOR = new Comparator<DropboxAPI.Entry>() {
         final SimpleDateFormat dropboxDateFormat = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z", Locale.getDefault());
+
         private Date parse(String dateString) {
             try {
                 return dropboxDateFormat.parse(dateString);
@@ -91,6 +93,16 @@ public class LoginActivity extends AppCompatActivity {
     private boolean mLoggedIn, modeList = true, sortByName = true;
     private ListAdapter adapter;
 
+    private static String format(DropboxAPI.Entry entry) {
+        return "Filename: " + entry.fileName() +
+                "\n\nModifiedDate: " + entry.modified +
+                "\n\nCreationDate: " + entry.clientMtime +
+                "\n\nPath: " + entry.path +
+                "\n\nReadOnly: " + entry.readOnly +
+                "\n\nSize: " + entry.size;
+    }
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -106,7 +118,15 @@ public class LoginActivity extends AppCompatActivity {
         checkAppKeySetup();
 
         // RecyclerView
-        adapter = new ListAdapter();
+        adapter = new ListAdapter(new OnItemClicked() {
+            @Override
+            public void onItemClicked(DropboxAPI.Entry entry, int position) {
+                new AlertDialog.Builder(LoginActivity.this)
+                        .setTitle("Epub details")
+                        .setMessage(format(entry))
+                        .show();
+            }
+        });
         list.setLayoutManager(new LinearLayoutManager(this));
         list.setAdapter(adapter);
 
@@ -128,6 +148,17 @@ public class LoginActivity extends AppCompatActivity {
         button.setText(sortByName ? "Sort by date" : "Sort by name");
     }
 
+    @OnClick(R.id.auth_button)
+    void onAuthButtonClicked() {
+        // This logs you out if you're logged in, or vice versa
+        if (mLoggedIn) {
+            logOut();
+        } else {
+            // Start the remote authentication
+            mApi.getSession().startOAuth2Authentication(LoginActivity.this);
+        }
+    }
+
     private void loadData() {
         new ListFiles(mApi, "/", new OnLoadCompleted() {
             @Override
@@ -136,17 +167,6 @@ public class LoginActivity extends AppCompatActivity {
                 adapter.sort(SORT_BY_NAME_COMPARATOR);
             }
         }).execute();
-    }
-
-    @OnClick(R.id.auth_button)
-    public void onAuthButtonClicked() {
-        // This logs you out if you're logged in, or vice versa
-        if (mLoggedIn) {
-            logOut();
-        } else {
-            // Start the remote authentication
-            mApi.getSession().startOAuth2Authentication(LoginActivity.this);
-        }
     }
 
     @Override
