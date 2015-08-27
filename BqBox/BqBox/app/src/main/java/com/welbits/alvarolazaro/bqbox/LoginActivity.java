@@ -33,8 +33,6 @@ import butterknife.OnClick;
 
 public class LoginActivity extends AppCompatActivity {
 
-    private static final String TAG = "DBRoulette";
-
     ///////////////////////////////////////////////////////////////////////////
     //                      Your app-specific settings.                      //
     ///////////////////////////////////////////////////////////////////////////
